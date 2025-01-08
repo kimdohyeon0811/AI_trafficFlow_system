@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRAFFIC VIDEO ANALYSIS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        #add_video {
+            background-color: #52ff33;
+        }
+
+        #show_list {
+            background-color: #f0ff33;
+        }
+
+        #stop_btn {
+            background-color: #ff3333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .content-wrapper {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        #video-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #video-container video {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .right-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chart-container {
+            margin-bottom: 20px;
+        }
+
+        #lane-status {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn_controls {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .controls button {
+            padding: 12px 25px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        #start-detection {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #start-detection:hover {
+            background-color: #45a049;
+        }
+
+        #pause-detection {
+            background-color: #f44336;
+            color: white;
+        }
+
+        #pause-detection:hover {
+            background-color: #d32f2f;
+        }
+
+        #detection-results {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+
+        .lane-status {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: 500;
+            font-size: 0.8em;
+            text-transform: uppercase;
+        }
+
+        .lane-status.clear {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .lane-status.congested {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .video-controls {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .video-controls button button:nth-child(0){
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #51de45;
+            color: white;
+            cursor: pointer;
+        }
+
+        .video-controls button:nth-child(1){
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #22f171;
+            color: white;
+            cursor: pointer;
+        }
+
+
+        .video-controls button:nth-child(2){
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #cfed0a;
+            color: white;
+            cursor: pointer;
+        }
+        
+        .video-controls button:nth-child(3){
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #51de45;
+            color: white;
+            cursor: pointer;
+        }
+
+        .video-controls button button:nth-child(2){
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #51de45;
+            color: white;
+            cursor: pointer;
+        }
+
+        .video-controls button button:nth-child(3){
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #51de45;
+            color: white;
+            cursor: pointer;
+        }
+
+        .video-list {
+            display: none;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .video-list.show {
+            display: block;
+        }
+
+        .video-list ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .video-list li {
+            padding: 8px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .video-list li:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>TRAFFIC VIDEO ANALYSIS</h1>
+        <div class="content-wrapper">
+            <div id="video-container">
+                <div class="video-controls">
+                    <!-- 숨겨진 파일 입력 필드 -->
+                    <input type="file" id="upload-video" accept="video/*" style="display: none;">
+                    <!-- 파일 선택 버튼 -->
+                    
+                    <div class="btn_controls">
+                        <button id="add-video">Add video</button>
+                        <button id="show-list">Show list</button>
+                        <button id="stop_btn">stop the video</button>
+                    </div>
+                    
+                </div>
+                <div id="video-list" class="video-list">
+                    <ul id="video-list-ul"></ul>
+                </div>
+                <div id="frame-info" style="font-size: 16px; font-weight: bold; margin-top: 10px;">
+                    <span id="current-frame">Current Frame(video): 0</span>
+                </div>
+                
+            </div>
+            <div class="right-column">
+                <video controls id="traffic-video">
+                </video>
+                <div id="chart-container">
+                    <canvas id="detection-chart"></canvas>
+                </div>
+                <div id="current-frame-label"></div>
+                <div id="detection-results"></div>
+                <div id="co2-result"></div>
+            </div>
+
+        </div>
+
+        <script>
+            // Initialize the socket connection
+            const video = document.getElementById('traffic-video');
+            var socket = io();
+            let detectionChart;
+            let labelData = [];
+            let videoFPS = 24; // Default FPS
+
+            // Load video metadata to calculate total frames
+            video.addEventListener('loadedmetadata', function () {
+                const duration = video.duration; // Video duration in seconds
+            });
+
+            // Update current frame on timeupdate
+            video.addEventListener('timeupdate', function () {
+                const currentTime = video.currentTime; // Current time in seconds
+                const currentFrame = Math.floor(currentTime * videoFPS);
+                document.getElementById('current-frame').textContent = `Current Frame: ${currentFrame}`;
+            });
+
+            // Fetch and update label data
+            function fetchLabelData(videoName) {
+                const labelDataPath = `/get_label_data/${videoName.replace('.mp4', '')}`;
+                fetch(labelDataPath)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch label data.');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        labelData = data;
+                        console.log('Label data loaded:', labelData);
+
+                        // Optional: Clear or update label-related UI
+                        const detectionResults = document.getElementById('detection-results');
+                        detectionResults.innerHTML = 'Label data loaded. Ready to process.';
+                    })
+                    .catch(error => {
+                        console.error('Error loading label data:', error);
+                        const detectionResults = document.getElementById('detection-results');
+                        detectionResults.innerHTML = 'Failed to load label data.';
+                    });
+            }
+
+            // 차트 초기화
+            function initChart() {
+                const ctx = document.getElementById('detection-chart').getContext('2d');
+                detectionChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['car', 'truck', 'bus', 'motorcycle'],
+                        datasets: [{
+                            label: '차량 감지 수',
+                            data: [0, 0, 0, 0], // 초기 데이터
+                            backgroundColor: [
+                                'rgba(54, 162, 235, 0.5)',
+                                'rgba(255, 99, 132, 0.5)',
+                                'rgba(75, 192, 192, 0.5)',
+                                'rgba(255, 206, 86, 0.5)'
+                            ],
+                            borderColor: [
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(255, 206, 86, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                stepSize: 1
+                            }
+                        },
+                        animation: {
+                            duration: 0 // 애니메이션 제거
+                        }
+                    }
+                });
+            }
+
+            // 비디오 재생 시 현재 프레임(라벨) 정보를 차트에 반영
+            document.getElementById('traffic-video').addEventListener('timeupdate', function () {
+                const currentTime = this.currentTime;
+                const frameRate = 24; // 24 is the default frame rate
+                const currentFrame = Math.floor(currentTime * frameRate);
+
+                const frameData = labelData.find(frame => frame.frame === currentFrame);
+
+                if (frameData) {
+                    const counts = { car: 0, truck: 0, bus: 0, motorcycle: 0 };
+
+                    // 감지된 객체 수 계산
+                    frameData.detections.forEach(detection => {
+                        if (counts[detection.class] !== undefined) {
+                            counts[detection.class]++;
+                        }
+                    });
+
+                    // 차트 데이터 업데이트
+                    if (detectionChart) {
+                        detectionChart.data.datasets[0].data = [
+                            counts['car'] || 0,
+                            counts['truck'] || 0,
+                            counts['bus'] || 0,
+                            counts['motorcycle'] || 0
+                        ];
+                        detectionChart.update();
+                    }
+                }
+            });
+
+            // 차트 초기화 및 소켓 연결
+            socket.on('connect', function () {
+                console.log('Connected to server');
+                initChart();
+            });
+
+            // Display label data based on current video time
+            document.getElementById('traffic-video').addEventListener('timeupdate', function () {
+                const currentTime = this.currentTime;
+                const frameRate = 24; // 24 is the default frame rate
+                const currentFrame = Math.floor(currentTime * frameRate);
+
+                // 현재 프레임 표시
+                document.getElementById('current-frame-label').textContent = `Current Frame(label): ${currentFrame}`;
+
+                const frameData = labelData.find(frame => frame.frame === currentFrame);
+
+                const detectionResults = document.getElementById('detection-results');
+                detectionResults.innerHTML = '';
+
+                if (frameData) {
+                    frameData.detections.forEach(detection => {
+                        const detectionItem = document.createElement('div');
+                        detectionItem.textContent = `Class: ${detection.class}, Confidence: ${(detection.confidence * 100).toFixed(2)}%`;
+                        detectionResults.appendChild(detectionItem);
+                    });
+                } else {
+                    detectionResults.textContent = 'No detections for this frame.';
+                }
+            });
+
+            // 영상 추가 버튼 클릭 시 (아래 upload-video 호출)
+            document.getElementById('add-video').addEventListener('click', function () {
+                document.getElementById('upload-video').click();
+            });
+
+            // 파일 선택 시 AJAX(비동기)로 파일 업로드
+            document.getElementById('upload-video').addEventListener('change', function () {
+                const file = this.files[0]; // 선택된 파일
+
+                if (file) {
+                    const formData = new FormData();
+                    formData.append('video', file);
+
+                    // 파일을 서버로 전송
+                    fetch('/upload_video', {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            alert(data.message); // 업로드 결과 메시지
+                            // 업로드 후 목록 업데이트가 필요하면 여기서 구현 가능
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                        });
+                } else {
+                    alert('파일을 선택하지 않았습니다.');
+                }
+            });
+
+            // 목록 보기-리스트 선택 시 비디오 목록 가져오기
+            document.getElementById('show-list').addEventListener('click', function (event) {
+                document.getElementById('video-list').classList.toggle('show');
+                console.log("show list");
+                // 비디오 목록 가져오기
+                fetch('/get_video_list')
+                    .then(response => response.json())
+                    .then(data => {
+                        const videoListUl = document.getElementById('video-list-ul');
+
+                        // 목록 초기화
+                        videoListUl.innerHTML = '';
+
+                        // 파일 목록 동적 추가
+                        data.videos.forEach(video => {
+                            const item = document.createElement('li');
+                            item.textContent = video;
+                            item.setAttribute('data-video', video);
+                            // 목록에서 비디오 클릭 시 동작
+                            item.addEventListener('click', function () {
+                                const videoFile = this.getAttribute('data-video');
+                                const video = document.getElementById('traffic-video');
+                                video.src = "{{ url_for('static', filename='processed/') }}" + videoFile;
+                                video.load();
+
+                                //document.querySelector('.video-name').textContent = videoFile;
+
+                                // Fetch and update label data
+                                const baseName = videoFile.replace('.mp4', ''); // Remove file extension
+                                fetchLabelData(baseName);
+
+                                // Hide the video list dropdown
+                                document.getElementById('video-list').classList.remove('show');
+                            });
+                            videoListUl.appendChild(item);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            });
+
+        </script>
+</body>
+
+</html>

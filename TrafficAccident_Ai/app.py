@@ -9,7 +9,7 @@ import os
 import json
 from collections import Counter
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', template_folder='static', static_url_path='')
 socketio = SocketIO(app)
 
 # Load video and model
@@ -150,6 +150,10 @@ def process_and_generate_videos(original_path, processed_video_path, label_json_
 
 @app.route('/')
 def index():
+    return render_template('homepage.html')
+
+@app.route('/index')
+def render_index():
     return render_template('index.html')
 
 @socketio.on('connect')

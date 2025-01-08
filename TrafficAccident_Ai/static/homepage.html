@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Homepage</title>
+  </head>
+  <style>
+    html {
+        overflow: hidden;
+    }
+    html, body {
+        font-family: 'Times New Roman', Times, serif, sans-serif;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    header {
+        background-color: #66b1e0;
+        color: rgb(27, 25, 25);
+        padding: 20px;
+        text-align: center;
+    }
+    nav {
+        background-color: #66b1e0;
+    }
+    nav ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+    nav li {
+        float: right;
+    }
+    nav li a {
+        display: block;
+        color: rgb(17, 16, 16);
+        text-align: center;
+        padding: 14px 16px;
+        text-decoration: none;
+    }
+    nav li a:hover {
+        background-color: #745353;
+    }
+    main {
+        padding: 20px;
+        height: 100%;
+        display: flex;
+        width: 100%;
+        flex-direction: column;
+        box-sizing: border-box;
+    }
+    .button-container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+    }
+    footer {
+        background-color: #f1f1f1;
+        color: #555;
+        text-align: center;
+        padding: 10px;
+        position: fixed;
+        width: 100%;
+        bottom: 0;
+    }
+    .styled-button {
+            background-color: #4CAF50; /* Màu nền */
+            border: none; /* Không có đường viền */
+            color: white; /* Màu chữ */
+            padding: 15px 32px; /* Khoảng cách bên trong */
+            text-align: center; /* Căn giữa văn bản */
+            text-decoration: none; /* Không gạch chân */
+            align-items: center;
+            /* position: absolute; 
+            top:50%;
+            left: 50%;
+            transform: translate(-50%, -50%); */
+            display: inline-block; /* Hiển thị bên trong dòng */
+            font-size: 16px; /* Kích thước chữ */
+            margin: 4px 2px; /* Khoảng cách giữa các button */
+            cursor: pointer; /* Thay đổi con trỏ khi hover */
+            border-radius: 8px; /* Bo góc */
+            transition: background-color 0.3s; /* Hiệu ứng chuyển đổi màu nền */
+        }
+
+        .styled-button:hover {
+            background-color: #45a049; /* Màu nền khi hover */
+        }
+        .background-image {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+        }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>TRAFFIC VIDEO ANALYSIS</h1>
+</header>
+
+<nav>
+    <ul>
+        <li><a href="about.html">About us</a></li>
+        <li><a href="#home">Product information</a></li>
+    </ul>
+</nav>
+
+<main>
+    <div class="button-container">
+        <!-- <h2>Add image max Size</h2> -->
+        <img src="pic.jpg" alt="image" class="background-image">
+        <button class="styled-button" onclick="window.location.href='indexv  '">Launch</button>
+
+    </div>
+</main>
+
+<footer>
+    &copy; Duy Tan University- Daejin University
+</footer>
+
+</body>
+</html>
