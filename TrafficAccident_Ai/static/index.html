@@ -7,6 +7,7 @@
     <title>TRAFFIC VIDEO ANALYSIS</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -280,7 +281,7 @@
                 </div>
                 <div id="current-frame-label"></div>
                 <div id="detection-results"></div>
-                <div id="co2-result"></div>
+                <canvas id="emissionsChart" width="800" height="400"></canvas>
             </div>
 
         </div>
@@ -490,10 +491,15 @@
 
                                 //document.querySelector('.video-name').textContent = videoFile;
 
+
+                                const jsonFile = videoFile.replace('.mp4', '.json');
+                                console.log(jsonFile)
+                                loadGraph("{{ url_for('static', filename='processed/') }}" + jsonFile);
                                 // Fetch and update label data
                                 const baseName = videoFile.replace('.mp4', ''); // Remove file extension
                                 fetchLabelData(baseName);
 
+                                
                                 // Hide the video list dropdown
                                 document.getElementById('video-list').classList.remove('show');
                             });
@@ -504,6 +510,137 @@
                         console.error('Error:', error);
                     });
             });
+
+            async function loadGraph(filePath) {
+                try {
+                    const data = await loadJSON(filePath); // Load JSON using corrected loadJSON
+                    const emissionsData = calculateEmissions(data); // Calculate emissions
+                    createLineGraph('emissionsChart', emissionsData); // Render the graph
+                } catch (error) {
+                    console.error('Error in loadGraph:', error);
+                }
+            }
+
+            async function loadJSON(filePath) {
+                try {
+                    const response = await fetch(filePath); // Fetch JSON file
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json(); // Parse JSON
+                    return data;
+                } catch (error) {
+                    console.error('Error in loadJSON:', error);
+                    throw error;
+                }
+            }
+
+            item.addEventListener('click', function () {
+                const videoFile = this.getAttribute('data-video');
+                const jsonFile = videoFile.replace('.mp4', '.json');
+            
+                if (!jsonFile) {
+                    console.error('JSON file path is undefined.');
+                    return;
+                }
+            
+                const jsonFilePath = `/path/to/json/directory/${jsonFile}`; // JSON 파일의 실제 경로로 수정
+                loadGraph(jsonFilePath);
+            
+                // Hide the video list dropdown
+                document.getElementById('video-list').classList.remove('show');
+            });
+            
+            function calculateEmissions(data) {
+                const CO2_EMISSIONS = {
+                    Low: 1.0,    // Low 포화도의 CO₂ 배출량 (단위 차량당)
+                    Medium: 2.0, // Medium 포화도의 CO₂ 배출량
+                    Hard: 3.0    // Hard 포화도의 CO₂ 배출량
+                };
+            
+                const emissionsData = [];
+            
+                data.forEach(frameData => {
+                    const classCounts = { car: 0, motorcycle: 0, truck: 0, bus: 0 };
+            
+                    // 각 클래스별 객체 수 계산
+                    frameData.detections.forEach(detection => {
+                        if (classCounts[detection.class] !== undefined) {
+                            classCounts[detection.class]++;
+                        }
+                    });
+            
+                    // 차량 수에 따른 포화도 결정
+                    const totalVehicles = Object.values(classCounts).reduce((a, b) => a + b, 0);
+                    let trafficDensity = "Low";
+                    if (totalVehicles > 5 && totalVehicles <= 10) {
+                        trafficDensity = "Medium";
+                    } else if (totalVehicles > 10) {
+                        trafficDensity = "Hard";
+                    }
+            
+                    // 탄소 배출량 계산
+                    const frameEmissions = Object.keys(classCounts).reduce((total, className) => {
+                        return total + classCounts[className] * CO2_EMISSIONS[trafficDensity];
+                    }, 0);
+            
+                    emissionsData.push({
+                        frame: frameData.frame,
+                        emissions: frameEmissions
+                    });
+                });
+            
+                return emissionsData;
+            }
+
+            function createLineGraph(canvasId, emissionsData) {
+                const labels = emissionsData.map(data => `Frame ${data.frame}`);
+                const emissions = emissionsData.map(data => data.emissions);
+            
+                new Chart(document.getElementById(canvasId), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'CO₂ Emissions (g)',
+                            data: emissions,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Frames'
+                                }
+                            },
+                            y: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'CO₂ Emissions (g)'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
 
         </script>
 </body>
